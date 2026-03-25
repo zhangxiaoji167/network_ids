@@ -1,0 +1,19 @@
+# U2R 本地提权攻击检测规则
+- id: RULE-007
+  name: "Root Shell 提权检测"
+  description: "检测到获取了 root shell 权限"
+  conditions:
+    root_shell: 1
+  severity: "CRITICAL"
+  attack_category: "U2R"
+
+- id: RULE-008
+  name: "缓冲区溢出/系统入侵检测"
+  description: "大量 hot 指标且有系统被入侵痕迹"
+  conditions:
+    hot:
+      ">": 5
+    num_compromised:
+      ">": 0
+  severity: "CRITICAL"
+  attack_category: "U2R"

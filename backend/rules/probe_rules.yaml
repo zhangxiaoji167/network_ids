@@ -1,0 +1,36 @@
+# Probe 探测扫描检测规则
+- id: RULE-003
+  name: "端口扫描检测"
+  description: "同一目标主机的大量不同服务连接尝试，高差异服务率"
+  conditions:
+    dst_host_diff_srv_rate:
+      ">": 0.6
+    dst_host_count:
+      ">": 100
+    flag:
+      - "S0"
+      - "REJ"
+  severity: "MEDIUM"
+  attack_category: "Probe"
+
+- id: RULE-004
+  name: "网络扫描检测"
+  description: "短时间内大量连接且 SYN 错误率极高"
+  conditions:
+    count:
+      ">": 100
+    serror_rate:
+      ">": 0.8
+  severity: "MEDIUM"
+  attack_category: "Probe"
+
+- id: RULE-011
+  name: "零字节扫描检测"
+  description: "无数据传输且连接未完成的探测行为"
+  conditions:
+    duration: 0
+    src_bytes: 0
+    dst_bytes: 0
+    flag: "S0"
+  severity: "LOW"
+  attack_category: "Probe"

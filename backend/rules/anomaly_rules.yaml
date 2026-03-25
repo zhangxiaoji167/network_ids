@@ -1,0 +1,11 @@
+# 通用异常流量检测规则
+- id: RULE-012
+  name: "高 REJ 错误率连接"
+  description: "连接被拒绝的比率异常高"
+  conditions:
+    rerror_rate:
+      ">": 0.7
+    count:
+      ">": 50
+  severity: "MEDIUM"
+  attack_category: "Probe"

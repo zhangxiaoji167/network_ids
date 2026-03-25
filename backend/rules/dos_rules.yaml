@@ -1,0 +1,40 @@
+# DoS 攻击检测规则
+- id: RULE-001
+  name: "SYN Flood 检测"
+  description: "大量 S0 状态的 TCP 连接，SYN 错误率高"
+  conditions:
+    protocol_type: "tcp"
+    flag: "S0"
+    serror_rate:
+      ">": 0.5
+  severity: "HIGH"
+  attack_category: "DoS"
+
+- id: RULE-002
+  name: "Smurf 攻击检测"
+  description: "ICMP 协议，高目标字节数，大量同目标连接"
+  conditions:
+    protocol_type: "icmp"
+    dst_bytes:
+      ">": 500
+    dst_host_count:
+      ">": 200
+  severity: "HIGH"
+  attack_category: "DoS"
+
+- id: RULE-009
+  name: "Land 攻击检测"
+  description: "源地址等于目标地址的异常连接"
+  conditions:
+    land: 1
+  severity: "HIGH"
+  attack_category: "DoS"
+
+- id: RULE-010
+  name: "异常分片检测"
+  description: "包含错误的 IP 分片"
+  conditions:
+    wrong_fragment:
+      ">": 0
+  severity: "MEDIUM"
+  attack_category: "DoS"

@@ -1,0 +1,20 @@
+# R2L 远程非法访问检测规则
+- id: RULE-005
+  name: "暴力登录检测"
+  description: "多次失败登录尝试且未成功登录"
+  conditions:
+    num_failed_logins:
+      ">": 3
+    logged_in: 0
+  severity: "HIGH"
+  attack_category: "R2L"
+
+- id: RULE-006
+  name: "可疑访客登录"
+  description: "使用访客账号进行异常操作"
+  conditions:
+    is_guest_login: 1
+    hot:
+      ">": 2
+  severity: "MEDIUM"
+  attack_category: "R2L"
