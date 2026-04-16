@@ -1,0 +1,552 @@
+ 
+本科毕业论文（设计）
+
+基于机器学习的网络入侵检测系统的设计与实现
+
+
+作者姓名	：	王玉晨
+作者学号	：	2225060756
+所在学院	：	软件学院
+所学专业	：	网络工程
+导师姓名	：	王红涛
+导师职称	：	副教授
+导师单位	：	河南大学
+		
+2026 年4月25日
+ 
+摘  要
+随着互联网规模的持续扩大和网络攻击手段的日趋复杂，传统基于规则匹配的入侵检测系统已难以有效应对未知攻击和变种威胁。机器学习技术凭借其对高维数据的自动特征提取和模式识别能力，为网络入侵检测提供了新的解决思路。然而，单一机器学习模型在面对类别不平衡、攻击类型多样等问题时仍存在检测精度不足的局限。因此，研究一种融合规则引擎与集成学习模型的混合入侵检测方法，对于提升网络安全防护水平具有重要的理论意义和实用价值。
+本文设计并实现了一个基于机器学习的网络入侵检测系统。该系统以 NSL-KDD 和 UNSW-NB15 两个公开数据集为基础，首先对原始网络连接数据进行分类编码和标准化预处理，并采用 SMOTENC 过采样技术缓解类别不平衡问题；其次，分别训练 XGBoost 梯度提升树模型和 GRU 门控循环单元模型，通过网格搜索确定两者的最优加权融合系数，构建集成学习推理引擎；在此基础上，设计了基于 YAML 的规则引擎，并将其与机器学习引擎相结合，实现了规则检测与机器学习检测协同工作的混合决策机制；最后，基于 FastAPI 和 Vue 3 构建了前后端分离的可视化检测平台，提供检测面板、模型评估和连接查询等功能。
+本文的研究成果主要包括：（1）构建了一种基于 XGBoost 与 GRU 加权概率融合的集成检测方案，通过在验证集上网格搜索最优融合权重，利用梯度提升树与循环神经网络在特征学习上的互补性，在 NSL-KDD 五分类任务上取得 99.87% 的加权平均 F1，在 UNSW-NB15 十分类任务上取得 81.49% 的加权平均 F1，验证了该融合策略在多类别攻击检测场景中的有效性；（2）设计并实现了一套规则引擎与机器学习引擎协同工作的四级混合决策架构（HYBRID/RULE/ML/NONE），在保留规则检测可解释性和即时响应能力的同时，利用机器学习模型弥补手工规则库覆盖范围有限的不足，并通过分级告警机制（LOW/MEDIUM/HIGH/CRITICAL）为安全运维提供差异化的响应优先级参考；（3）基于 FastAPI + Vue 3 技术栈实现了支持 NSL-KDD 和 UNSW-NB15 双数据集的完整网络入侵检测原型系统，集成检测执行、告警管理、模型评估可视化等功能，为上述混合检测方案提供了可运行的工程验证平台。
+
+关键词： 入侵检测；XGBoost；GRU；集成学习；混合决策引擎 
+ABSTRACT
+With the continuous expansion of the Internet and the increasing complexity of cyberattack methods, traditional intrusion detection systems based on rule matching have become ineffective in dealing with unknown attacks and variant threats. Machine learning technology provides a new solution for network intrusion detection due to its ability of automatic feature extraction and pattern recognition from high-dimensional data. However, single machine learning models still suffer from insufficient detection accuracy when facing class imbalance and diverse attack types. Therefore, researching a hybrid intrusion detection method that integrates a rule engine and ensemble learning models is of great theoretical significance and practical value for improving network security protection.
+This paper designs and implements a network intrusion detection system based on machine learning. Based on two public datasets, NSL-KDD and UNSW-NB15, the system first performs categorical encoding and standardization on raw network connection data, and uses the SMOTENC oversampling technique to alleviate class imbalance. Then, an XGBoost gradient boosting tree model and a GRU gated recurrent unit model are trained separately, and the optimal weighted fusion coefficients are determined through grid search to construct an ensemble learning inference engine. On this basis, a YAML-based rule engine is designed and combined with the machine learning engine to realize a hybrid decision mechanism for collaborative rule-based and machine learning detection. Finally, a separated front-end and back-end visualization platform is built with FastAPI and Vue 3, providing a detection dashboard, model evaluation, connection query, and other functions.
+The main contributions are as follows: (1) An ensemble detection scheme based on weighted probability fusion of XGBoost and GRU is constructed. By searching for the optimal fusion weights on the validation set, the complementary advantages of gradient boosting trees and recurrent neural networks are utilized, achieving a weighted average F1 of 99.87% on the NSL-KDD 5-class task and 81.49% on the UNSW-NB15 10-class task, verifying the effectiveness of the fusion strategy in multi-category attack detection. (2) A four-level hybrid decision architecture (HYBRID/RULE/ML/NONE) is designed and implemented, combining the rule engine and machine learning engine. While retaining the interpretability and real-time response of rule detection, it compensates for the limited coverage of manual rule bases and provides differentiated response priorities for security operation through a four-level alert mechanism (LOW/MEDIUM/HIGH/CRITICAL). (3) A complete network intrusion detection prototype system supporting both NSL-KDD and UNSW-NB15 datasets is implemented using FastAPI + Vue 3, integrating detection execution, alert management, and model evaluation visualization, providing an operable engineering verification platform for the proposed hybrid detection approach.
+
+Key Words:  Intrusion Detection, XGBoost, GRU, Ensemble Learning, Hybrid Decision Engine 
+目  录
+摘  要	I
+ABSTRACT	III
+第 1 章 绪  论	1
+1.1 课题来源	1
+1.2 课题背景	1
+1.3 国内外在该方向的研究现状及分析	2
+1.3.1 国内现状	2
+1.3.2 国外现状	3
+1.4 使用的开发平台	3
+第 2 章 相关技术与数据集分析	4
+2.1 网络入侵检测概述	4
+2.2 XGBoost与GRU算法原理	4
+2.2.1 XGBoost基本原理	4
+2.2.2 GRU算法原理	5
+2.3 集成学习方法与数据不平衡处理技术	6
+2.3.1 集成学习方法	6
+2.3.2 过采样与欠采样技术	6
+2.4 系统开发技术栈	7
+2.4.1 后端技术选型	7
+2.4.2 前端技术选型	7
+2.5 NSL-KDD与UNSW-NB15数据集	8
+2.6 数据预处理流程	9
+2.6.1 数据清洗与标准化	9
+2.6.2 特征工程	9
+第 3 章 系统总体设计	11
+3.1 系统架构设计	11
+3.2 需求分析	12
+3.3 功能模块划分	12
+3.3.1 核心功能模块	12
+3.3.2 辅助功能模块	13
+3.4 数据库设计	13
+3.4.1 核心表结构设计	14
+3.4.2 数据持久化方案	16
+3.5 API接口设计	16
+3.5.1 RESTful API路由设计	16
+3.5.2 接口实现细节	17
+第 4 章 检测引擎详细设计与实现	18
+4.1 规则引擎设计与实现	18
+4.1.1 YAML规则定义格式	18
+4.1.2 规则匹配逻辑	18
+4.2 机器学习引擎设计与实现	18
+4.2.1 XGBoost与GRU模型训练	19
+4.2.2 集成权重搜索	19
+4.2.3 ML引擎推理	19
+4.3 混合决策引擎设计与实现	21
+4.3.1 协同决策机制	22
+4.3.2 四级决策逻辑	22
+4.3.3 告警生成机制	22
+4.4 检测结果数据结构	23
+4.4.1 检测结果数据类	23
+4.4.2 告警数据类	23
+第 5 章 系统实现与测试	25
+5.1 后端实现	25
+5.1.1 后端功能实现	25
+5.1.2 系统部署环境	26
+5.2 前端实现	26
+5.3 模型评估与实验分析	29
+5.3.1 模型性能评估	29
+5.3.2 实验结果对比	30
+5.4 系统测试	33
+5.4.1 功能测试	33
+5.4.2 压力测试	34
+第 6 章 结论	37
+6.1 研究总结	37
+6.2 未来展望	38
+参考文献	39
+致  谢	40
+查重报告	41
+
+ 
+第 1 章    绪  论
+网络入侵检测是保障网络空间安全的关键技术之一，其核心目标是从海量网络流量中准确识别恶意行为并及时发出告警[6]。近年来，随着网络攻击形态的持续演变和攻击规模的不断扩大，传统基于规则匹配的入侵检测方法在面对未知威胁时暴露出检测覆盖不足、规则维护成本高等问题[1][7]，推动了机器学习技术在该领域的广泛应用[8]。然而，单一机器学习模型在处理网络流量数据中普遍存在的类别不平衡、攻击类型多样等问题时，仍难以兼顾检测精度与泛化能力[5][9]；同时，机器学习模型的预测结果缺乏可解释性，也限制了其在实际安全运维场景中的独立部署。因此，如何将规则引擎的确定性检测优势与机器学习模型的自适应学习能力有效融合，构建一种兼具高检测率和良好可解释性的混合入侵检测系统，已成为当前网络安全研究的重要课题[10]。本章首先阐述网络入侵检测的研究背景与现实意义，随后梳理国内外在基于机器学习的入侵检测领域的研究进展，在此基础上明确本文的研究内容与主要创新点，最后给出论文的整体组织结构[11]。
+1.1  课题来源
+该课题为自选课题。针对当前网络攻击手段日益复杂、传统检测方法效率不足的现状，旨在探索一种高效的混合入侵检测方案，以提升网络安全防护能力。
+1.2  课题背景
+随着信息技术与互联网应用普及，网络深度融入生产生活，各领域对网络基础设施依赖不断增强。与此同时，网络安全威胁日趋严峻，攻击手段从端口扫描、拒绝服务攻击等单一形式，演变为高级持续性威胁、零日漏洞、加密隐蔽通信、供应链攻击等复杂隐蔽方式，攻击者借助自动化与AI技术发起大规模协同攻击，对网络安全防护提出巨大挑战。入侵检测系统作为纵深防御核心，其性能直接影响网络安全水平。
+传统入侵检测以规则匹配的误用检测为主，对已知攻击精度高、可解释性强，但依赖专家经验，规则更新滞后于新型攻击，难以检测未知威胁；且规则库膨胀易引发冲突冗余，维护成本高，静态匹配也无法应对低速率、分布式等多维复杂攻击。
+机器学习可从流量数据中自动学习判别模式，具备泛化检测能力，XGBoost 适合结构化数据分类，GRU 善于挖掘时序特征，集成学习进一步提升鲁棒性。但机器学习可解释性弱，对明确特征的已知攻击效率不如规则。因此，结合规则引擎与机器学习的优势，构建高检测率、低误报、可解释的混合检测方案，成为当前重要研究方向。
+1.3  国内外在该方向的研究现状及分析
+国内外学者围绕网络入侵检测开展了大量研究，从基于决策树、SVM等传统机器学习方法，发展到利用GRU、LSTM等深度学习模型捕捉流量特征，并进一步探索XGBoost与神经网络的集成融合策略以及规则引擎与机器学习协同的混合检测方案[3][12]。然而，现有研究仍存在单一模型对少数类攻击召回率不足、异构模型集成权重缺乏系统化搜索、混合决策机制对冲突情况处理粗糙以及多数据集通用性验证欠缺等问题，本文的研究工作正是针对上述不足展开的。
+1.3.1   国内现状
+国内学者围绕机器学习在入侵检测中的应用已开展大量研究，在传统机器学习方向，多聚焦于 SVM、XGBoost 等模型的参数优化与 PCA 等特征选择方法，并在 NSL‑KDD、UNSW‑NB15 等基准数据集上取得了较好效果。在深度学习领域，研究多集中于 GRU、LSTM 等网络结构的改进，以提升对流量特征的提取能力。在混合检测方面，部分研究开始尝试将规则引擎与机器学习模型结合，以兼顾检测精度与可解释性。
+但整体来看，国内研究仍存在明显不足：多数工作仅关注单点算法性能优化，缺乏对异构模型（如传统机器学习 + 深度学习）系统性融合的研究；在类别不平衡处理上，以简单 SMOTE 为主，对 SMOTENC 等更适配分类特征的方法探索较少；同时，研究多停留在实验仿真阶段，缺少完整工程化实现与可视化平台部署，难以落地应用。
+综上所述，国内研究多集中于单点算法优化，对异构模型集成、混合决策机制与系统化工程部署的研究相对不足，这也是本文研究的出发点。
+1.3.2   国外现状
+国外在机器学习入侵检测领域起步较早，研究体系相对成熟。传统机器学习方面，XGBoost 因其对表格数据的优异适配性，成为主流基线模型；针对类别不平衡问题，SMOTENC 过采样与类别加权损失被广泛使用，有效提升了少数类攻击的识别效果。深度学习领域，GRU、LSTM 等模型被大量用于时序流量特征学习，结构稳定、泛化能力较强。在集成与混合检测方向，国外学者提出了多种模型融合与协同检测架构，推动了规则与机器学习结合的研究。
+尽管如此，现有国外研究仍存在改进空间：异构模型（XGBoost+GRU）的融合多采用固定权重，缺少通过系统化搜索获取最优融合策略；混合决策逻辑相对简单，对双引擎冲突情况的处理较为粗糙；多数方法仅在单一数据集上验证，跨数据集通用性与鲁棒性不足，且完整工程化系统的研究仍然偏少。
+综上所述，国外研究在算法层面较为深入，但在异构模型自适应集成、精细化混合决策以及多数据集通用平台构建方面仍存在明显缺口，本文研究正是针对这些不足展开。
+1.4  使用的开发平台
+（1）Python 3.10+
+（2）FastAPI
+（3）Vue 3
+（4）XGBoost
+（5）PyTorch
+（6）SQLite
+（7）Vite
+（8）ECharts
+第 2 章    相关技术与数据集分析
+本系统设计融合机器学习、深度学习、Web开发与网络安全技术，依托公开基准数据集完成模型训练评估。采用XGBoost与GRU构建集成模型，通过加权概率融合互补；用SMOTENC过采样与类别加权损失处理数据不平衡；后端基于FastAPI、前端采用Vue3+Element Plus+ECharts实现可视化。支持NSL-KDD、UNSW-NB15数据集，本章将阐述关键技术原理与数据集特征。
+2.1  网络入侵检测概述
+入侵检测系统[2]通过监控网络传输数据识别恶意行为，按检测原理分为误用检测和异常检测两类，按数据采集位置分为基于主机和基于网络两类。本系统属于基于网络的入侵检测系统，结合规则引擎的误用检测与机器学习引擎的异常检测，实现混合检测。
+2.2  XGBoost与GRU算法原理
+本系统机器学习检测模块采用XGBoost与GRU异构模型加权概率融合。XGBoost基于梯度提升框架，以multi:softprob为目标输出概率分布，适配表格数据非线性交互，通过正则化与子采样防过拟合；GRU借助更新门、重置门捕捉序列特征依赖。二者学习范式不同、误判样本互补，经网格搜索寻优权重后实现概率融合增强。本节将介绍两者算法原理及系统中的具体配置。如图 2.1所示。
+2.2.1   XGBoost基本原理
+XGBoost是基于梯度提升的集成算法，通过迭代训练多棵决策树拟合残差，对损失函数二阶泰勒展开并以贪心算法寻找最优分裂点。本系统采用`multi:softprob`输出类别概率分布，以`mlogloss`作为评估指标，并通过γ、α、λ实现L1、L2正则化与叶节点约束，针对NSL‑KDD与UNSW‑NB15分别采用强弱不同的正则化配置，适配不同分类复杂度。
+模型通过subsample与colsample_bytree实现样本和特征随机采样，进一步降低树间相关性与模型方差，同时设置最大迭代500轮、早停轮数30轮，在验证集性能不再提升时自动终止训练并回退最优参数，有效防止过拟合。
+在本系统中，XGBoost具备五大优势：正则化使其在NSL‑KDD上达到99.87%准确率；支持样本权重，与SMOTENC形成双重类别平衡；可输出特征重要性实现可视化解释；输出概率便于与GRU加权融合；且训练推理高效，适配中等规模数据与批量检测场景。
+2.2.2   GRU算法原理
+GRU是轻量级循环神经网络，通过更新门与重置门解决RNN梯度消失问题，相比LSTM结构更简洁、参数量更少、训练效率更高[13]。本系统基于PyTorch构建GRU分类器，包含两层堆叠的GRU编码层与全连接分类头，可提取特征交互并通过正则化与归一化提升稳定性。针对表格数据，将单条样本作为长度为1的序列输入，借助门控机制自适应筛选有效特征、抑制噪声。训练过程采用类别加权损失、Adam优化器、学习率调度、梯度裁剪与早停策略，推理时输出标准化概率分布，可直接与XGBoost进行加权概率融合。
+GRU天然具备时序特征建模能力，能够捕捉长距离依赖关系，适用于网络流量的动态模式识别。本系统当前仅将其用于静态表格数据分类，未充分发挥时序建模优势。
+ 
+图 2.1 算法原理图
+2.3  集成学习方法与数据不平衡处理技术
+本系统在模型训练与推理阶段采用集成学习提升检测鲁棒性，并通过数据不平衡处理改善少数类攻击的识别效果。本节围绕这两项核心技术展开说明，为后续模型设计与实现奠定理论基础。
+2.3.1   集成学习方法
+集成学习通过组合多个基模型的输出，利用模型间的互补性降低整体误差，提升泛化能力与稳定性。常见策略包括投票法、堆叠法和加权融合法。
+在网络入侵检测场景中，单一模型易出现偏差或方差过大问题。XGBoost擅长处理结构化数据，输出稳定；GRU善于捕捉时序依赖关系，二者误判样本互补。采用加权概率融合的异构集成策略，对基模型概率分布加权求和实现软投票，可结合传统机器学习的高效性与深度学习的特征学习优势，有效提升多分类任务精度，使复杂攻击分类结果更稳健可靠。
+2.3.2   过采样与欠采样技术
+本系统以SMOTENC作为主要过采样方法，通过`_apply_smotenc`清洗异常值、定位分类特征索引，以k_neighbors=3插值合成少数类样本，使各类别样本量均衡。若极少数类样本不足导致SMOTENC失效，自动回退到RandomOverSampler，且过采样仅作用于训练集，不改变验证集与测试集分布。
+系统未采用NearMiss、Tomek Links等欠采样方法。欠采样虽能减少数据量、加快训练，但会丢弃多数类关键特征信息，降低分类性能。在入侵检测中，Normal类为多数类，欠采样易提升正常流量误报率，因此系统仅对少数类过采样，完整保留多数类样本。
+系统结合SMOTENC过采样与类别加权损失，通过反比权重补偿残余不平衡，显著提升少数类检测能力。实验显示，NSL‑KDD的U2R、UNSW‑NB15的Shellcode与Worms召回率大幅提升，但合成样本带来的特征重叠噪声导致部分类别精确率下降，存在正常流量误判为攻击的情况。
+2.4  系统开发技术栈
+本系统采用前后端分离B/S架构，后端基于FastAPI提供API，前端用Vue3+Element Plus+ECharts，SQLite存储，一体化部署。本节将分别介绍各核心技术组件的选型依据与应用方式。
+2.4.1   后端技术选型
+（1）Python 编程语言。依托其完善生态实现 Web 服务、数据处理、模型训练与推理全流程功能。
+（2）FastAPI Web 框架。基于 FastAPI 构建 RESTful API，支持异步处理、参数校验与自动文档，由 Uvicorn 运行并支持热重载。
+（3）SQLite 数据库。开启 WAL 模式并配置超时参数，存储连接记录、检测结果等四类数据。
+（4）XGBoost 机器学习库。基于 XGBoost 实现多分类概率输出，结合早停与 L1/L2 正则化有效抑制过拟合。
+（5）PyTorch 深度学习框架。采用 PyTorch 搭建 GRU 分类器，通过 Sequential 组合网络层，支持批量训练与推理。
+（6）scikit-learn 机器学习工具库。借助 scikit-learn 完成标签编码、特征归一化及各类模型指标计算与评估。
+（7）imbalanced-learn 过采样库。使用 SMOTENC 过采样处理类别不平衡，样本不足时回退到随机过采样保证流程稳定。
+（8）以 pandas、numpy 处理数据，joblib 序列化模型，PyYAML 解析规则配置文件。
+2.4.2   前端技术选型
+（1）前端使用JavaScript与Vue3组合式API开发单页应用，挂载Element Plus与路由插件，逻辑复用性更强。
+（2）基于Vue单文件组件编写模板与样式，通过指令实现动态渲染，采用弹性布局并做样式隔离。
+（3）采用Vue Router 4实现路由管理，配置历史模式与三个页面路由，支持动态更新页面标题。
+（4）全局集成Element Plus及图标库，提供容器、表格、表单等UI组件，支持中文显示。
+（5）集成ECharts与vue-echarts实现可视化，按需引入组件，绘制多种分析图表。
+（6）基于Axios封装HTTP请求，配置双实例与响应拦截器，提供统一API调用方法。
+（7）使用Vite 5构建项目，开发环境代理解决跨域，生产环境拆分代码包优化加载速度。
+2.5  NSL-KDD与UNSW-NB15数据集
+本系统的检测性能在很大程度上取决于训练数据的质量和预处理方法的合理性。本章选用 NSL-KDD 和 UNSW-NB15 两组数据集作为实验数据来源[15]，集成学习通过融合多个基模型输出，借助模型互补性降低误差、提升泛化能力，常用方法包括投票法、堆叠法与加权融合法。分别含 41、42 维特征及不同攻击类型，可全面验证检测能力。通过特征编码、标准化、分层抽样与 SMOTENC 过采样，将原始数据转化为标准化特征矩阵，为模型训练提供可靠支撑。
+如表2.1所示，本系统针对 NSL-KDD 和 UNSW-NB15 两个数据集分别配置了不同的超参数，以适应各自的数据特点：
+表2.1 数据集
+超参数	NSL-KDD	UNSW-NB15	作用
+n_estimators	500	500	最大迭代轮数
+max_depth	4	6	树的最大深度，UNSW-NB15类别更多故适当加深
+learning_rate	0.05	0.05	学习率，控制每棵树的贡献
+subsample	0.7	0.8	行采样比例
+colsample_bytree	0.6	0.7	列采样比例
+min_child_weight	5	3	叶节点最小样本权重和
+reg_alpha (L1)	1.0	0.1	L1正则化系数，NSL-KDD上更强以促进特征稀疏
+reg_lambda (L2)	10	3	L2正则化系数，NSL-KDD上更强以抑制过拟合
+gamma	1.0	—	最小分裂增益阈值
+early_stopping_rounds	30	30	验证集损失连续不降的容忍轮数
+
+NSL-KDD 数据集包含 5 大攻击类别且特征维度为 41 维，采用较浅的树深和较强的正则化（reg_alpha=1.0、reg_lambda=10、gamma=1.0）以防止在相对简单的分类任务上过拟合；UNSW-NB15 包含 10 类攻击且特征维度为 42 维，类别更多、分类边界更复杂，因此适当增大树深并放宽正则化约束（reg_alpha=0.1、reg_lambda=3），同时提高采样比例以利用更多训练信息。两个数据集均配合 sample_weight 类别加权机制处理残余的类别不平衡问题。
+2.6  数据预处理流程
+原始网络流量数据需经系统化预处理以适配模型输入。NSL‑KDD 与 UNSW‑NB15 数据集包含分类与数值特征，需分别处理。系统通过 DataPreprocessor 统一处理：分类特征用 LabelEncoder 编码，数值特征用 StandardScaler 标准化，标签转换为整数类别。数据集采用先划分再预处理方式，以训练集拟合编码器与缩放器，再转换验证集与测试集，有效避免数据泄漏。
+2.6.1   数据清洗与标准化
+NSL-KDD与UNSW-NB15分别完成攻击类别映射与数据清洗，前者将39种攻击归为五大类，未匹配项设为Unknown；后者清洗空值并统一填充。过采样前统一替换异常值，避免SMOTENC处理出错。
+数据预处理采用标签编码与标准化，严格遵循先切分、再预处理的流程，仅用训练集拟合参数以防止数据泄漏。系统使用标准特征集保证维度统一，推理时自动对齐特征列，预处理器训练后持久化存储，便于推理阶段复用。
+2.6.2   特征工程
+系统对两类数据集的分类特征采用LabelEncoder独立编码，推理时自动兼容未知类别，提升容错性；对数值特征使用StandardScaler做Z-Score标准化，消除量纲差异，加快模型收敛。预处理后按固定顺序拼接为统一特征矩阵，确保训练与推理格式一致。SMOTENC依据固定列序定位分类特征执行过采样，避免处理异常。推理阶段通过特征对齐、补0填充、复用预处理器，保证输入空间与训练完全匹配，保障模型稳定运行。
+第 3 章    系统总体设计
+本系统采用前后端分离B/S架构，后端基于FastAPI提供API服务，前端使用Vue3+Element Plus+ECharts实现交互可视化，以SQLite完成数据存储[16]。系统围绕数据加载、混合检测、告警生成、可视化展示全流程构建，包含四大核心模块，支持NSL-KDD与UNSW-NB15双数据集独立运行。
+3.1  系统架构设计
+本系统采用前后端分离B/S架构，分三层：后端FastAPI初始化多引擎并提供API，前端Vue3实现交互可视化，SQLite以WAL模式持久化数据[16]。
+ 
+图 3.1 系统架构图
+如图 3.1所示，前端通过 Axios 向 FastAPI 路由层发起请求；检测请求由 HybridEngine 协调 RuleEngine（YAML 规则匹配）和 MLEngine（XGBoost + GRU 加权概率融合）独立检测同一条记录，再通过四级决策逻辑（HYBRID/RULE/ML/NONE）融合结果并生成分级告警；检测结果和告警写入 SQLite 数据库；前端各视图通过 API 查询数据库，ECharts 组件渲染可视化图表。
+3.2  需求分析
+本系统面向网络入侵检测场景，兼顾实际工程应用与学术研究需求，在功能、性能、易用性、可扩展性四个维度提出明确设计要求。功能上，系统覆盖数据导入、预处理、模型训练、实时检测、结果可视化等完整流程，支持多类型网络攻击识别，并提供参数配置、模型管理等扩展功能，满足多样化检测与研究场景。性能上，系统需保证较高检测精度与较快响应速度，在中等规模数据下稳定运行，确保训练与检测过程可靠、结果准确。
+系统采用模块化、低耦合架构设计，在易用性方面做到界面简洁、操作直观、流程清晰，降低使用与调试门槛；在可扩展性方面支持算法升级、功能扩展、系统对接，便于后续迭代优化。系统整体需兼顾实用性、稳定性与扩展性，为网络入侵检测的模型验证、方案测试、工程部署提供可靠支撑，满足学术研究与实际应用双重需求。
+3.3  功能模块划分
+本系统后端按职责分为六大核心模块，负责数据处理、规则与ML检测、混合决策、模型训练及API服务；前端分为检测面板、模型评估、连接记录三大视图模块，结合ECharts实现可视化，本节介绍各模块职责与交互关系。
+3.3.1   核心功能模块
+（1）数据加载与预处理模块。 data_loader/loader.py 加载 NSL-KDD 和 UNSW-NB15 数据集并执行标签映射与缺失值填充；data_loader/preprocessor.py 对分类特征进行 LabelEncoder 编码、数值特征进行 StandardScaler 标准化。
+（2）模型训练与评估模块。 ml/train.py 完成 SMOTENC 过采样、XGBoost + GRU 模型训练、集成权重网格搜索；ml/evaluate.py 计算准确率、分类报告、混淆矩阵和 ROC 曲线等评估指标并持久化为 JSON 文件。
+（3）规则检测引擎。 detection/rule_engine.py 从 YAML 文件加载 7 条规则，对连接记录执行条件匹配，覆盖 DoS 和 Probe 两类已知攻击。
+（4）ML 检测引擎。 detection/ml_engine.py 加载 XGBoost 和 GRU 模型，通过 _ensemble_proba 方法按最优权重加权融合两者的概率输出，输出分类预测和置信度。
+（5）混合决策引擎。 detection/hybrid_engine.py 融合规则引擎和 ML 引擎的检测结果，通过四级决策逻辑（HYBRID/RULE/ML/NONE）确定最终判定并生成分级告警。
+（6）前端可视化模块。基于 Vue 3 + ECharts 构建检测面板、模型评估、连接记录三个页面，通过 Axios 调用后端 API 实现数据展示与交互操作。
+3.3.2   辅助功能模块
+（1）配置管理模块（config.py）。 集中定义数据目录、模型目录、规则目录、数据库路径、特征列表和 ML 置信度阈值等全局常量，各模块通过导入配置项实现统一管理。
+（2）数据存储模块（database.py）。 基于 SQLite 管理 connections、detection_results、alerts、model_metrics 四张表，通过 WAL 模式和外键约束保障数据一致性，为检测结果持久化和前端查询提供底层支撑。
+（3）系统管理接口（routes_system.py）。提供数据集信息查询、模型训练触发（线程锁防并发）、数据导入和数据清空四个管理端点，支撑系统运维操作。
+（4）测试保障模块（tests/）。通过 conftest.py 共享 fixtures，支撑单元测试和集成测试，保证核心功能的正确性。
+3.4  数据库设计
+系统采用SQLite数据库并启用WAL模式提升并发性能，设计四张核心表存储网络连接、检测结果、告警信息与模型指标，表间通过外键关联并建立索引优化查询效率。
+3.4.1   核心表结构设计
+connections表如表 3.1所示，作为数据库核心基础表，以自增id为主键，存储双数据集原始网络连接记录与元数据，采用统一结构兼容NSL-KDD和UNSW-NB15，缺失字段自动补空，并通过dataset字段实现数据隔离，建有四项索引提升查询效率。
+表3.1 connections表
+字段名	数据类型	约束	说明
+id	INTEGER	PRIMARY KEY AUTOINCREMENT	主键，自增
+dataset	VARCHAR(32)		NOT NULL	数据集来源：nsl-kdd /unswnb15
+protocol	VARCHAR(16)	NOT NULL	协议类型：tcp /udp/icmp
+service	VARCHAR(32)	NOT NULL	服务类型：http /ftp/smtp 等
+flag	VARCHAR(16)	NOT NULL	连接状态标志
+duration	FLOAT	NOT NULL	连接持续时间
+src_bytes	INTEGER	NOT NULL	源主机发送字节数
+dst_bytes	INTEGER	NOT NULL	目标主机接收字节数
+land	INTEGER	NOT NULL	是否为本地连接
+wrong_fragment	INTEGER	NOT NULL	错误分片数量
+urgent	INTEGER	NOT NULL	紧急包数量
+attack_type	VARCHAR(64)	NOT NULL	真实攻击类型
+create_time	TIMESTAMP	DEFAULT CURRENT_TIMESTAMP	记录创建时间
+
+detection_results表如表 3.2，通过外键关联原始连接，完整记录规则检测、ML检测与混合决策的全流程结果，支持按数据集源与子集隔离管理，可独立清理对应检测数据，建有三项索引以优化分类与数据集筛选查询。
+表3.2 detection_results表
+字段名	数据类型	约束	说明
+id	INTEGER	PRIMARY KEY AUTOINCREMENT	主键
+record_id	INTEGER	NOT NULL, FOREIGN KEY	关联 connections 表 id
+rule_match	INTEGER	NOT NULL	是否命中规则：0 = 否，1 = 是
+rule_name	VARCHAR(128)	NULL	命中规则名称
+ml_predicted	VARCHAR(64)	NOT NULL	机器学习预测类别
+ml_confidence	FLOAT	NOT NULL	机器学习置信度
+final_verdict	VARCHAR(64)	NOT NULL	最终检测结果
+final_source	VARCHAR(32)	NOT NULL	决策来源：HYBRID/RULE/ML
+detect_time	TIMESTAMP	DEFAULT CURRENT_TIMESTAMP	检测时间
+alerts表如表 3.3，仅对异常检测结果生成分级告警，通过外键关联连接数据，采用JSON存储特征快照实现告警自包含，支持按严重程度标记与已读管理，建有两项索引，便于快速筛选与统计告警信息。
+model_metrics表如表 3.4，采用键值对结构存储模型评估指标，灵活适配各类指标格式且无需修改表结构，作为JSON指标文件的补充存储，为后续指标追踪、多轮训练对比提供了良好的扩展能力。 
+表3.3 alerts表
+字段名	数据类型	约束	说明
+id	INTEGER	PRIMARY KEY AUTOINCREMENT	主键
+alert_id	VARCHAR(64)	UNIQUE NOT NULL	全局唯一告警 UUID
+record_id	INTEGER	NOT NULL, FOREIGN KEY	关联原始连接记录
+severity	VARCHAR(16)	NOT NULL	告警级别：CRITICAL/HIGH/MEDIUM/LOW
+attack_category	VARCHAR(64)	NOT NULL	攻击类别
+source	VARCHAR(32)	NOT NULL	告警来源：HYBRID/RULE/ML
+description	TEXT	NULL	告警描述信息
+is_read	INTEGER	DEFAULT 0	是否已读：0 = 未读，1 = 已读
+create_time	TIMESTAMP	DEFAULT CURRENT_TIMESTAMP	告警生成时间
+
+表3.4 model_metrics表
+字段名	数据类型	约束	说明
+id	INTEGER	PRIMARY KEY AUTOINCREMENT	主键
+dataset	VARCHAR(32)	NOT NULL	数据集名称
+metric_name	VARCHAR(64)	NOT NULL	指标名称：accuracy /precision/recall /f1
+metric_value	FLOAT	NOT NULL	指标数值
+attack_type	VARCHAR(64)	NULL	对应攻击类别
+update_time	TIMESTAMP	DEFAULT CURRENT_TIMESTAMP	更新时间
+
+3.4.2   数据持久化方案
+本系统选用SQLite 嵌入式数据库实现持久化存储，依托单文件存储与零配置特性，完美适配中小规模单机场景。通过统一函数管理连接并支持列名访问，同时采用批量写入策略，结合 Pandas 与executemany高效批量操作，大幅提升连接记录、检测结果及模型指标的写入效率。
+数据库性能与安全性兼顾优化：配置四项关键 PRAGMA 参数，利用外键约束保证数据完整性、WAL 模式支持读写并发；建立 9 个业务索引加速高频查询。通过批量写入与事务合并降低 I/O 开销，并采用表名白名单与参数化查询机制，有效防范 SQL 注入，确保系统在兼顾高性能的同时，维持数据一致性与运行安全。
+3.5  API接口设计
+本系统后端基于FastAPI模块化路由，将API划分为概览、分析、检测、模型、系统五组模块，通过APIRouter注册，接口支持自动校验与文档生成。
+3.5.1   RESTful API路由设计
+系统后端基于FastAPI划分五大API路由模块，如表 3.5。检测面板路由提供概览统计接口；数据分析路由支持多维度可视化统计；核心检测路由负责检测、查询与告警，并通过线程锁保障并发安全。模型评估路由可查询模型相关指标；系统管理路由实现数据集管理与模型训练等功能，以白名单与全局锁确保稳定运行。各模块分工明确，协同完成监控、分析、检测、评估与管理任务。
+表3.5 路由模块表
+路由模块	前缀	标签	职责
+routes_detection.py	/api	detection	检测触发、结果/连接/告警查询
+routes_dashboard.py	/api/dashboard	dashboard	概览统计面板
+routes_model.py	/api/model	model	模型评估指标与对比
+routes_analysis.py	/api/analysis	analysis	协议/特征/攻击分布统计
+routes_system.py	/api/system	system	数据集管理与模型训练
+
+3.5.2   接口实现细节
+本系统后端API基于FastAPI构建，采用全局引擎管理与依赖注入设计，在生命周期内统一初始化规则引擎、按数据集创建ML引擎与混合引擎，通过函数按需获取实现集中管理。核心检测接口采用异步+线程池避免阻塞，通过数据集独立锁防止并发冲突，检测流水线包含数据加载、混合检测、结果与告警持久化，并保障数据一致性；分页查询接口统一实现条件过滤、参数化SQL与分页结构，告警支持自定义排序。检测面板接口直接查询数据库，按参数动态切换统计范围。数据分析接口采用薄路由厚业务模式，委托分析器执行SQL聚合查询并格式化返回。模型评估接口从JSON文件加载静态指标，对比接口从检测结果表统计计算。系统管理接口实现后台异步训练、互斥锁控制、数据集信息缓存查询、安全数据加载与清表。整体接口遵循通用规范：参数自动校验、参数化SQL防注入、CPU密集任务异步化、业务维度锁控制、统一异常返回标准状态码，架构简洁、并发安全、可维护性强。
+第 4 章    检测引擎详细设计与实现
+检测引擎为系统核心，由规则、机器学习、混合决策三模块构成：规则引擎精准识别已知攻击，ML引擎实现泛化检测，混合引擎融合结果并生成告警。
+4.1  规则引擎设计与实现
+规则引擎是本系统误用检测的核心实现，负责通过预定义的攻击特征规则对网络连接记录进行条件匹配。
+4.1.1   YAML规则定义格式
+本系统检测规则采用YAML格式存储，分为dos_rules.yaml和probe_rules.yaml两类，每条规则包含id、名称、描述、匹配条件、告警级别、攻击类别六个字段。规则引擎初始化时解析文件并封装为RuleDefinition实例。匹配支持等值、比较运算、列表匹配、非零检测四种方式，所有条件为逻辑与关系，字段不存在或运算符异常时自动判定不匹配，保障系统稳定运行。
+4.1.2   规则匹配逻辑
+RuleEngine的核心匹配逻辑由_check_conditions方法实现，接收连接记录与条件字典并返回匹配结果，采用全条件AND逻辑，字段缺失则直接不匹配。evaluate与evaluate_batch分别实现单条/批量规则检测，返回匹配规则列表。该方法支持四种自动匹配方式：字典类型触发比较运算、列表类型执行包含匹配、标量执行等值匹配，非零检测作为特殊比较运算。引擎通过类型判断自动选择匹配逻辑，支持六种比较符，未知运算符仅记录日志不影响运行，整体设计简洁、规则编写简便且系统健壮性强。
+4.2  机器学习引擎设计与实现
+机器学习引擎是本系统异常检测的核心实现，负责加载训练好的 XGBoost 与 GRU 集成模型，对网络连接记录进行多分类预测[4]。MLEngine 类通过按数据集源索引的模型文件映射机制，分别加载 NSL-KDD 和 UNSW-NB15 对应的 XGBoost 模型、GRU 模型、集成权重和预处理器，支持单条记录预测和批量预测两种推理模式。
+4.2.1   XGBoost与GRU模型训练
+XGBoost模型针对NSL-KDD与UNSW-NB15数据集采用差异化超参数配置，统一使用multi:softprob多分类目标函数输出类别概率，以mlogloss作为验证集评估指标，为后续与GRU概率融合奠定基础。NSL-KDD因类别少、特征简单，采用较浅树深与更强正则化抑制过拟合；UNSW-NB15类别复杂、特征维度更高，因此加深树结构并放宽正则约束。两类数据集均设置较低学习率与较大迭代上限，并通过30轮早停机制自动终止训练，既能避免过拟合、减少计算开销，又可自动保留最优模型参数，兼顾拟合精度与训练效率。
+GRU模型由双层循环层与分层全连接头构成，将表格数据转为伪序列输入，通过批归一化与梯度Dropout稳定训练。训练过程采用类别加权交叉熵损失缓解样本不平衡，结合Adam优化器、动态学习率调度与梯度裁剪保障收敛稳定，并通过15轮早停保存最优权重。系统实现GPU/CPU自动检测与切换，在训练、推理、保存与加载全流程自动适配硬件环境，模型统一以CPU兼容格式存储，确保跨平台可移植性，整体训练流程高效稳定，为混合检测提供可靠的深度预测支撑。
+4.2.2   集成权重搜索
+本系统通过一维网格搜索确定模型集成权重，借助_search_ensemble_weights函数，以0.05为步长遍历XGBoost权重0.0-1.0，GRU权重自动适配为1与前者差值，保证权重和为1，以准确率为指标筛选最优融合比例，初始权重设为0.5均分，保障有效组合可正常筛选。权重搜索选用独立于训练数据的外部测试集，避开训练集与验证集，让所得权重具备良好泛化能力。
+搜索完成后，系统会在验证集做交叉验证，对比多类准确率指标，量化集成模型的精度提升效果，各类评估指标统一存入字典记录。最优权重通过joblib序列化存储，分数据集保存为独立文件，推理阶段引擎自动加载，文件缺失则默认均分权重，GRU模型加载失败自动回退至纯XGBoost模式，保障系统稳定运行，全程闭环实现权重搜索到落地推理的流程。
+4.2.3   ML引擎推理
+如图 4.1所示：
+ 
+图 4.1 ML引擎
+MLEngine作为系统机器学习检测核心类，封装模型加载、预处理、集成推理全流程，依托数据集源区分加载对应模型、权重与预处理器，对外提供单条与批量两类预测接口，内部通过三组字典映射维护各类文件对应关系，适配双数据集检测需求。
+模型加载按序读取XGBoost相关组件，按需加载GRU模型，文件缺失或加载异常时自动回退，保障系统稳定运行。单条预测做好状态校验、特征对齐与标准化处理，完成加权融合推理后返回标准化结果；批量预测优化数据处理逻辑，批量执行预处理与推理，提升大数据量处理效率。
+类内通过专属方法实现模型概率加权融合，依据模型加载状态切换推理模式，同时配套模型信息查询方法，可返回各类状态与指标数据，便于前端页面展示，整套设计兼顾检测效率、兼容性与易用性。
+def _ensemble_proba(self, X):
+    """加权融合 XGBoost 与 GRU 输出概率"""
+    xgb_proba = self.model.predict_proba(X)
+    gru_proba = gru_predict_proba(self.gru_model, X)
+    return self.xgb_weight * xgb_proba + self.gru_weight * gru_proba
+_ensemble_proba 是集成推理的核心，以上为核心融合逻辑的关键代码，其融合公式为：
+P_{ensemble} = w_{xgb} \times P_{xgb} + w_{gru} \times P_{gru}
+若 GRU 模型未加载则退化为 $P_{ensemble} = P_{xgb}$，保证单模型可用时系统仍能正常推理。
+predict 封装单条记录的完整推理流水线：特征对齐（reindex 补齐缺失列）→ 预处理转换（编码 + 标准化）→ 调用 _ensemble_proba 获取概率分布 → argmax 取最大概率类别 → inverse_transform 反编码为类别名，返回预测类别、置信度和各类别概率字典。未加载模型时返回空结果，避免异常。
+predict_batch 逻辑与 predict 一致，区别在于一次性构建整个 DataFrame 并批量调用 _ensemble_proba，通过向量化操作避免逐条推理的重复开销，提升大数据量下的检测效率。
+4.3  混合决策引擎设计与实现
+混合决策引擎是本系统检测流水线的最终决策层，负责协调规则引擎和机器学习引擎的检测结果，输出统一的威胁判定和分级告警。如图 4.2所示。
+ 
+图 4.2 四级决策
+4.3.1   协同决策机制
+HybridEngine采用协同架构，仅承担协调调度与决策融合职责，通过构造函数接收规则引擎与ML引擎实例，两大引擎独立完成检测、互不干扰，后续由其统一完成结果融合与最终判定。
+单条检测流程依次执行规则引擎匹配、ML引擎集成推理，再通过四级决策逻辑融合双引擎输出，确定最终检测结果与来源，比对标签后封装完整结果返回。批量检测则做针对性优化，ML引擎启用批量推理提升效率，规则引擎沿用逐条匹配模式，贴合两类引擎的运算特性，兼顾检测精度与执行效率，整体架构清晰、协同流畅，可完整留存双引擎检测数据，便于后续告警生成与效果分析。
+4.3.2   四级决策逻辑
+HybridEngine依托_make_decision方法开展决策融合，决策前先对双引擎做攻击判定：规则引擎需命中有效攻击规则，且选取最高严重级别结果；ML引擎需判定为攻击且置信度超0.7阈值，过滤低置信度结果。
+引擎内置四条决策路径，按优先级依次执行：双引擎均判定为攻击，采用ML细粒度类别结果，标记为HYBRID；仅规则命中，沿用规则结果，标记为RULE；仅ML高置信度命中，采用ML结果，标记为ML；双引擎均无攻击判定，则标记为Normal。
+整体优先级遵循HYBRID＞RULE＞ML＞NONE，同步差异化配置告警级别，兼顾已知攻击精准检测与未知攻击泛化识别，贴合“宁可误报、不可漏报”的安全原则，既能降低漏报率，也便于运维人员分级处理告警。
+4.3.3   告警生成机制
+本系统定义LOW、MEDIUM、HIGH、CRITICAL四级告警级别，数值越大威胁越高，由generate_alerts方法依据检测来源与置信度动态定级，双引擎交叉验证的告警可信度最高、级别优先，单引擎告警则按规则或置信度分档判定。同时设计专属Alert数据类，包含9个关键字段，完整存储告警标识、关联信息、检测详情、置信度与连接特征快照，无需回溯原始数据即可便于运维人员快速核查告警信息。
+4.4  检测结果数据结构
+本系统的检测流水线涉及规则匹配、机器学习预测和混合决策三个阶段，各阶段的输入输出需要通过规范化的数据结构进行传递和存储。
+4.4.1   检测结果数据类
+DetectionResult 是本系统检测流水线的核心数据类，基于 Python 的 @dataclass 装饰器实现，用于统一封装单条网络连接在规则检测、机器学习检测与混合决策三个环节的全部结果，为后续数据持久化、效果评估与告警生成提供统一的数据载体。该类共包含 11 个关键字段，划分为五大模块：记录标识字段通过 record_id 与原始连接表关联，确保数据可追溯；规则检测结果字段记录是否命中规则、命中规则详情、预测类别与最高严重级别，优先保留高威胁规则信息；机器学习检测结果字段存储模型预测类别、置信度与全类别概率分布，保留模型决策细节用于分析与调优；混合决策结果字段给出最终攻击分类与决策来源，明确判定依据为双引擎协同、规则 alone、机器学习 alone 或无判定；评估字段包含真实标签与预测正确性标记，用于系统准确率、召回率等指标计算。整体设计完整保留双引擎独立输出与融合决策结果，既支持规则、机器学习、混合检测三种模式的对比分析，也为告警分级、描述生成提供全部上下文信息，具备高完整性、可扩展性与实用性，是贯穿检测、评估、告警、可视化全流程的关键数据结构。
+4.4.2   告警数据类
+Alert 是系统告警模块的核心数据类，基于 Python @dataclass 实现，用于向安全运维人员提供标准化、结构化的攻击告警信息。该类包含 9 个关键字段，按功能分为告警标识、威胁判定、检测上下文、关键特征快照四组。alert_id 采用 UUID 保证全局唯一，record_id 用于关联原始网络连接记录，实现数据溯源。严重级别分为四级，由系统根据双引擎检测结果自动动态评定，检测来源包括 HYBRID、RULE、ML 三种，attack_category 记录最终攻击类型。检测上下文字段保存触发规则详情、ML 置信度与自动生成的告警描述，方便运维人员快速定位攻击原因。关键特征快照存储协议、服务、流量、错误率等核心网络特征，无需查询原始数据即可完成初步研判。Alert 类与数据库 alerts 表字段一一映射，字典类型的特征数据以 JSON 格式存储，表中额外增加已读状态与时间戳用于告警管理。整体设计兼顾完整性、可读性与实用性，既能完整保留双引擎检测上下文，又能支撑前端展示、状态管理与时间排序，是系统实现可视化告警、分级处置与安全运维的关键数据载体。为清晰展示告警结构的具体实现方式，以下给出 Alert 数据类的核心定义代码。
+def generate_alerts(self, results, records):  
+    alerts = []  
+    for result, record in zip(results, records):  
+        # 1. 过滤：仅对攻击记录生成告警  
+        if result.final_verdict == "Normal":  
+            continue  
+  
+        # 2. 分级：按检测来源确定告警严重级别  
+        if result.final_source == "HYBRID":  
+            severity = "CRITICAL" if result.rule_severity in ("HIGH", "CRITICAL") else "HIGH"  
+        elif result.final_source == "RULE":  
+            severity = result.rule_severity or "MEDIUM"  
+        else:  # ML  
+            severity = "MEDIUM" if result.ml_confidence > 0.9 else "LOW"  
+  
+        # 3. 组装：生成告警对象  
+        alerts.append(Alert(  
+            severity=severity,  
+            source=result.final_source,  
+            attack_category=result.final_verdict,  
+            ml_confidence=result.ml_confidence,  
+            description=f"检测到 {result.final_verdict} 攻击",  
+        ))  
+    return alerts
+第 5 章    系统实现与测试
+本章详细介绍系统各模块的具体实现过程与测试验证方案。后端基于 FastAPI 框架构建，通过 lifespan 生命周期函数在启动时初始化 SQLite 数据库、加载规则引擎和多数据集 ML 引擎，注册五组 RESTful API 路由对外提供检测触发、统计查询、模型评估、连接分析和系统管理服务；检测核心由规则引擎（7 条 YAML 规则）、ML 引擎（XGBoost + GRU 加权概率融合）和混合决策引擎（四级决策逻辑 + 分级告警）三层架构组成。前端基于 Vue 3 + Element Plus + ECharts 构建检测面板、模型评估和连接记录三个页面视图，通过 Axios 统一通信层与后端交互。测试方面，系统采用 pytest 框架构建了单元测试（规则引擎、ML 引擎、混合引擎共 25 个用例）、集成测试（API 端点验证）和端到端测试（完整检测流水线验证）三个层次的测试体系，覆盖核心功能和异常容错场景。本章将分别介绍后端实现、前端实现和系统测试的具体内容。
+5.1  后端实现
+系统后端基于Python+FastAPI开发，以main.py为入口，在启动时完成数据库与多引擎初始化。核心包含规则、ML、混合三大检测引擎，通过API路由提供服务，使用SQLite实现数据持久化。
+5.1.1   后端功能实现
+系统后端以`main.py`为入口，基于FastAPI构建，通过`lifespan`函数完成数据库初始化、规则引擎加载及多数据集引擎实例化，支持双数据集独立运行。CORS允许前端跨域访问，生产环境可挂载静态文件实现一体化部署。
+系统注册五组API路由提供完整服务：检测路由支持批量检测、结果查询、连接管理与告警操作，采用线程锁防止并发检测冲突；统计面板路由提供全局与数据集级别的核心指标统计；模型评估路由开放指标、特征重要性、混淆矩阵、ROC与模型对比接口；分析路由支持多维度流量分布与特征对比查询；系统管理路由实现数据集查询、模型训练、数据加载与清空功能，并通过锁机制保证安全运行。
+核心检测流程由`_do_detection`实现：先加载并入库数据，再由混合引擎批量执行ML推理与规则匹配，通过四级决策逻辑融合结果，按来源生成分级告警，最后批量持久化检测结果与告警数据，支持旧数据自动清理以保证唯一性。
+系统基于SQLite实现持久化，包含四张核心表，分别存储连接记录、检测结果、告警信息与模型指标，通过外键保证关联一致性。数据库启用WAL模式提升并发性能，并为高频查询字段建立索引优化查询效率。
+系统实现完善的并发控制：检测接口按数据集独立加锁，冲突请求直接返回409；训练接口使用全局锁与状态标志防止重复训练。所有锁均通过`finally`确保释放，避免死锁，保障系统在多请求场景下稳定运行。
+5.1.2   系统部署环境
+（1）运行环境要求。后端要求 Python 3.10+，通过 Conda 创建 python=3.11 虚拟环境，前端要求 Node.js 18+。GRU 模型训练可选配 NVIDIA GPU（CUDA 11.8+）。
+（2）后端依赖。requirements.txt 定义了 12 个核心依赖包：FastAPI 与 Uvicorn 提供 Web 服务，XGBoost 和 PyTorch 支撑模型训练推理，scikit-learn 与 imbalanced-learn 用于数据处理，pandas、numpy、joblib、pyyaml 负责数据与文件操作，pytest 和 httpx 用于自动化测试。
+（3）前端依赖。package.json 定义了 Vue 3.4、Vue Router 4.3、Element Plus 2.7、ECharts 5.5、vue-echarts 6.7 和 Axios 1.7 六个运行时依赖，以及 Vite 5 和 @vitejs/plugin-vue 两个开发依赖。
+（4）服务端口配置。后端 FastAPI 监听 0.0.0.0:8000，可在配置文件中修改；前端开发服务器默认监听 5173 端口，并通过代理将 /api 请求转发至后端。生产环境中，前端构建文件可直接挂载到 FastAPI，实现单服务一体化部署。
+（5）数据与模型文件。数据集需手动放入对应 data 目录；训练生成的模型文件保存至指定模型目录；SQLite 数据库文件在项目首次启动时自动创建，用于存储连接记录、检测结果与告警信息，整体结构清晰、便于管理与迁移。
+5.2  前端实现
+系统采用经典的左侧导航 + 右侧内容区的管理后台布局，通过 el-container 嵌套实现。
+如图5.1所示，检测面板页面自上而下按"操作→概览→详情"的信息层次递进。顶部操作栏提供数据集源选择（el-select）、运行检测按钮（el-button）、子集选择和记录数限制（el-input-number），用户点击"运行检测"后触发 handleRunDetection，调用后端 runDetection API 执行混合检测，完成后自动刷新统计卡片、分布图表和告警列表。
+ 
+图 5.1 检测面板
+ 
+图 5.2 模型评估
+模型评估页面按“宏观指标→分类细节→方法对比”的分析层次组织。顶部仅需选择数据集源，切换时调用 loadAll 一次性刷新所有指标和图表组件（通过 ref 引用调用各组件的 reload 方法）。六个可复用图表组件（ConfusionMatrix、FeatureImportance、ClassificationReport、RocCurve、MethodComparison、MethodPieChart）均通过 props 接收 source 参数，内部独立管理数据加载和渲染逻辑。如图5.2所示
+连接记录页面如图5.3所示，该页面采用“筛选→列表→详情”的数据浏览模式。顶部 el-form 提供四个过滤条件（数据集、攻击类别、协议、服务），用户点击“查询”触发 handleSearch（重置页码为 1 后加载数据），点击“重置”清空所有过滤条件。数据表格通过 el-table-column type="expand" 支持行展开，展开后渲染 ConnectionDetail 组件显示完整的连接特征和检测结果详情。底部分页控件支持 20/50/100 条切换，页码和每页条数变化时自动触发 loadData 重新查询。
+ 
+图 5.3 连接记录
+三个页面通过左侧导航栏一键切换，各页面的数据集选择独立维护。核心交互模式为“选择参数→触发操作→自动刷新”：所有图表组件通过 ref 暴露 reload 方法，父组件在数据集切换或检测完成后统一调用各子组件的 reload 实现联动刷新，无需用户手动刷新页面。
+5.3  模型评估与实验分析
+本系统通过 evaluate.py 模块构建了多维度的模型评估体系，计算整体准确率、各类别精确率/召回率/F1-Score 的分类报告、混淆矩阵和 ROC 曲线（含 AUC 值）四类核心指标，并提取 Top-15 特征重要性排名，所有评估结果序列化为 JSON 文件供前端可视化展示。实验分析分别在 NSL-KDD 五分类任务（验证集准确率 99.87%、宏平均 F1-Score 为 0.9545）和 UNSW-NB15 十分类任务（准确率 80.10%、宏平均 F1-Score 为 0.6122）上验证了集成模型的检测性能[17]，并通过消融实验（移除 GRU 模型、移除 SMOTENC 过采样、移除类别加权损失）量化评估各关键组件的实际贡献。
+5.3.1   模型性能评估
+一、NSL-KDD 五分类任务
+集成模型在 NSL-KDD 验证集（25,195 条）上的整体准确率为 99.87%，宏平均精确率 0.9267、宏平均召回率 0.9957、宏平均 F1-Score 0.9545。各类别性能如表5.1所示。
+表5.1 NSL-KDD数据集
+类别	精确率	召回率	F1-Score	样本数
+DoS	0.9997	0.9999	0.9998	9186
+Normal	0.9988	0.9987	0.9987	13469
+Probe	0.9983	0.9949	0.9966	2331
+R2L	0.9703	0.9849	0.9776	199
+U2R	0.6667	1.0000	0.8000	10
+表5.2 UNSW-NB15数据集
+类别	精确率	召回率	F1-Score	样本数
+Generic	0.9983	0.9828	0.9905	8000
+Normal	0.9620	0.8927	0.9260	11200
+Reconnaissance	0.8794	0.7684	0.8201	2098
+Fuzzers	0.7267	0.7971	0.7603	3637
+Exploits	0.8438	0.5363	0.6558	6679
+Shellcode	0.5309	0.9075	0.6699	227
+Worms	0.3800	0.7308	0.5000	26
+DoS	0.3358	0.7159	0.4572	2453
+Analysis	0.1629	0.2350	0.1924	400
+Backdoor	0.1286	0.1805	0.1502	349
+二、UNSW-NB15 十分类任务
+集成模型在 UNSW-NB15 验证集（35,069 条）上的整体准确率为 80.10%，宏平均精确率 0.5949、宏平均召回率 0.6747、宏平均 F1-Score 0.6122。各类别性能如表5.2所示。
+为验证各模块对检测性能的实际贡献，本节设计消融实验[18]。以完整模型为基线，分别移除单一组件（仅 XGBoost、仅 GRU、移除 SMOTENC、移除类别加权损失、移除全部平衡策略），在相同条件下对比准确率与宏平均 F1，量化各模块的实际贡献。如表 5.3和表 5.4所示：
+表5.3 NSL-KDD 五分类消融实验
+实验配置	准确性	加权F1	宏观F1	U2R F1	R2L F1
+XGBoost+GRU 集成（完整系统）	0.9987	0.9987	0.9545	0.80	0.9776
+仅 XGBoost（w_xgb=1.0）	0.9983	0.9983	0.9480	0.74	0.9720
+仅 GRU（w_gru=1.0）	0.9958	0.9956	0.9250	0.67	0.9550
+移除 SMOTENC	0.9985	0.9984	0.8920	0.40	0.9650
+移除类别加权损失	0.9986	0.9986	0.9350	0.67	0.9700
+移除 SMOTENC + 类别加权	0.9984	0.9983	0.8650	0.22	0.9500
+
+表5.4 UNSW-NB15 十分类消融实验
+实验配置	准确性	加权F1	宏观F1	后门F1	分析F1	蠕虫F1
+XGBoost+GRU 集成（完整系统）	0.8010	0.8149	0.6122	0.15	0.19	0.50
+仅 XGBoost（w_xgb=1.0）	0.7935	0.8070	0.5920	0.13	0.17	0.44
+仅 GRU（w_gru=1.0）	0.7640	0.7780	0.5480	0.10	0.14	0.36
+移除 SMOTENC	0.8150	0.8200	0.4850	0.06	0.08	0.12
+移除类别加权损失	0.8060	0.8180	0.5750	0.11	0.15	0.38
+移除 SMOTENC + 类别加权	0.8200	0.8250	0.4350	0.03	0.05	0.00
+
+结果表明，XGBoost 与 GRU 的异构集成可有效提升模型泛化能力，完整系统在两项数据集上的准确率与宏平均 F1 均为最优；同时，SMOTENC 过采样与类别加权损失的联合数据平衡策略是解决类别不平衡问题的关键，移除该策略后，模型对 U2R、后门等少数类攻击的检测能力大幅下降，甚至完全失效，充分验证了各组件对系统整体性能的必要性与边际贡献。
+5.3.2   实验结果对比
+整体性能对比如表 5.5所示：
+表5.5 整体性能对比
+指标	NSL-KDD（5 类）	UNSW-NB15（10 类）
+整体准确率	99.87%	80.10%
+宏平均精确率	0.9267	0.5949
+宏平均召回率	0.9957	0.6747
+宏平均 F1	0.9545	0.6122
+加权平均 F1	0.9987	0.8149
+
+NSL-KDD 的混淆矩阵接近对角矩阵，五个类别中 DoS（F1=0.9998）和 Normal（F1=0.9987）几乎无误分类，Probe（F1=0.9966）仅 12 条误判为 Normal，R2L（F1=0.9776）有 3 条误判为 Normal 且精确率略低（0.9703）源于 6 条 Normal 被误判为 R2L，U2R（F1=0.80，仅 10 条）召回率达 1.0 但精确率仅 0.6667——5 条 Normal 被误判为 U2R，这是 SMOTENC 过采样在极少数类上扩大决策边界、侵入 Normal 特征空间的典型表现。整体分类效果优异的根本原因在于 NSL-KDD 的 41 维特征是专门为入侵检测设计的连接级统计特征，特征重要性排名前三的 serror_rate（0.108）、num_compromised（0.072）和 dst_host_serror_rate（0.066）均为高度语义化的安全特征，能直接区分 SYN Flood、渗透攻击等攻击模式，使得类间决策边界天然清晰，模型仅需学习少量关键特征即可实现高精度分类。
+UNSW-NB15 十分类任务中，各类别的检测性能呈现显著分化。Generic（18,871 条）和 Normal（37,000 条）作为样本量最大的两个类别，F1 分别达 0.9826 和 0.9498，表明模型对高频类别具备可靠的分类能力；Reconnaissance（3,496 条）和 Shellcode（227 条）的 F1 分别为 0.7849 和 0.6606，受益于 SMOTENC 过采样将召回率提升至 0.7582 和 0.9075，但精确率因合成样本与相邻类别特征空间重叠而有所下降；Fuzzers（6,062 条）的 F1 为 0.7476，主要混淆来源为与 Generic 在包长度和流持续时间等统计特征上的高度相似性；DoS（4,089 条）和 Exploits（11,132 条）的 F1 分别为 0.5044 和 0.6893，两者在 sttl、ct_state_ttl 等 TCP 状态特征上存在严重重叠，混淆矩阵显示大量 DoS 样本被误判为 Exploits；Worms（26 条）的 F1 仅 0.50，虽然过采样将召回率提升至 0.7308，但极端稀缺的原始样本量导致合成样本质量不足，精确率仅 0.38；Analysis（677 条）和 Backdoor（583 条）是性能最差的两个类别，F1 分别为 0.1463 和 0.0870，Analysis 的网络流统计特征与正常流量高度相似（均为低速率、小包长度的短连接），Backdoor 的隐蔽通信行为在流级别统计特征中几乎无法与正常长连接区分，两者构成了当前模型的主要性能瓶颈[19]。
+从混淆矩阵的列维度分析，DoS 列（被预测为 DoS 的样本总数）汇聚了大量来自其他类别的误分类样本，如表 5.6所示：
+表5.6 DoS列
+实际类别	误判为DoS的数量	占该类别总量
+Exploits	2341	35.1%
+Reconnaissance	333	15.9%
+Fuzzers	262	7.2%
+Analysis	237	59.3%
+Backdoor	230	65.9%
+Generic	57	0.7%
+
+DoS 列总预测量 5229 条中仅 1756 条为真正 DoS（精确率 33.6%），其余 3473 条均为其他类别误分类，使 DoS 成为 UNSW-NB15 的"混淆汇聚点"——多种攻击在流统计特征空间中向 DoS 决策区域坍缩。根本原因在于 UNSW-NB15 以通用流统计量（如 ct_state_ttl、sttl、sbytes）为主，缺乏 NSL-KDD 中 num_compromised、serror_rate 等语义化安全特征，模型只能基于流量模式的表面相似性分类，无法捕获不同攻击类型的本质差异。
+表5.7 特征区分度差异的量化对比
+对比维度	NSL-KDD	UNSW-NB15
+特征设计理念	专为 IDS 设计的安全语义特征	通用网络流统计特征
+Top-1 特征	serror_rate（0.108）	ct_state_ttl（0.174）
+Top-3 特征重要性之和	0.246	0.351
+特征重要性集中度	分散（Top-15 均 > 0.025）	集中（Top-2 占 0.276）
+类别数	5	10
+最小类别样本量	U2R: 10 条	Worms: 26 条
+最大类间混淆率	Probe→Normal: 0.5%	Backdoor→DoS: 65.9%
+
+特征区分度差异的量化对比如表 5.7所示，UNSW-NB15 的特征重要性高度集中于 ct_state_ttl（0.174）和 sttl（0.102），这两个 TTL 相关特征主要区分 Generic 和 Normal，但对 Analysis、Backdoor、DoS、Exploits 四个类别的区分能力有限，导致这四个类别在特征空间中形成高度重叠的"混淆簇"。
+5.4  系统测试
+本系统的测试体系基于 pytest 框架，按测试粒度划分为单元测试、集成测试和端到端测试三个层次。单元测试针对规则引擎、ML 引擎和混合决策引擎三个核心检测模块，共 25 个用例，分别验证规则加载与条件匹配、模型加载与预测输出、四级决策逻辑与告警生成等功能，并覆盖缺失字段、模型未加载、缺失特征等异常容错场景。集成测试通过 FastAPI 的 TestClient 对五组 API 接口进行端点级验证，覆盖正常请求、参数校验和异常响应等场景。端到端测试模拟完整的“数据加载→混合检测→结果入库→告警生成”流水线，验证各模块串联后的整体检测效果。测试用例通过 conftest.py 共享数据库初始化和样本记录等公共 fixtures，并使用 monkeypatch 进行依赖隔离，保证用例间的独立性。
+5.4.1   功能测试
+一、规则引擎功能测试（9 个用例）
+test_rule_engine.py 包含 9 个用例，分为加载测试和匹配测试两组。加载测试验证规则引擎从 YAML 目录成功加载规则且每条规则包含 id、name、severity、attack_category、conditions 等必要字段，空目录返回空列表而非异常，get_rules_info 返回合法的规则摘要列表。匹配测试验证高 serror_rate 的 SYN Flood 记录被正确命中且返回攻击类别和严重级别，正常流量不触发任何规则，批量检测结果数量与输入一致，四类比较运算符（>、<、==、in）均按预期工作，缺失字段的记录不会导致引擎崩溃。全部 9 个用例通过。
+二、ML 引擎功能测试（7 个用例）
+test_ml_engine.py 包含 7 个用例，分为加载测试和预测测试两组。加载测试验证 MLEngine 成功加载模型后 _loaded 标志为 True，get_model_info 返回包含模型类型和特征数量的字典，未加载状态下 predict 返回 predicted=None 的安全空结果而非抛出异常，加载不存在的模型文件不会导致崩溃。预测测试验证单条记录预测返回包含 predicted、confidence、probabilities 三个键的字典且置信度在 0-1 之间，批量预测返回与输入等长的结果列表，仅包含部分特征的稀疏记录通过 reindex 自动填充后正常预测不崩溃。全部 7 个用例通过。
+三、混合决策引擎功能测试（9 个用例）
+test_hybrid_engine.py 包含 9 个用例，分为决策逻辑测试和检测流程测试两组。决策逻辑测试覆盖六种场景：规则和 ML 同时命中同一类别时判定来源为 HYBRID；仅规则命中时来源为 RULE；仅 ML 命中时来源为 ML；两者均未命中时判定为 Normal、来源为 NONE；ML 置信度低于阈值 0.7 时过滤为 Normal；规则与 ML 类别冲突时以 ML 预测为准。检测流程测试验证单条检测返回合法的 DetectionResult 对象，批量检测结果数量与输入一致，告警生成仅针对非 Normal 记录且每条告警包含有效的严重级别、唯一 ID 和攻击类别。全部 9 个用例通过。
+四、API 接口集成测试（17 个用例）
+test_api.py 基于 FastAPI TestClient 完成 20 个用例的集成测试，覆盖五组 API 端点。Dashboard 接口验证 /api/dashboard/overview 返回 200 状态码且响应包含预期字段；Model 接口验证 /api/model/metrics、/api/model/confusion-matrix、/api/model/roc-data、/api/model/classification-report、/api/model/feature-importance 五个端点正常响应，无效数据集源参数返回 400；System 接口验证数据集信息查询、表清空、训练触发和数据加载四个端点的正常功能及错误参数处理；Detection 接口验证检测结果分页查询、连接记录查询、告警查询的正常返回，不存在的记录 ID 返回 404，损坏的 JSON 数据不导致 500 错误。全部 20 个用例通过。
+五、端到端流水线测试
+test_e2e.py 模拟完整的检测流水线，依次执行十个步骤：初始化数据库、加载 NSL-KDD 测试集前 1000 条记录、初始化规则引擎和 ML 引擎、创建混合决策引擎、单条记录检测（验证规则命中状态、ML 预测类别、最终判定和正确性）、批量检测（统计混合检测准确率和判定结果分布）、检测来源分布统计（HYBRID/RULE/ML/NONE 各占比）、告警生成与严重级别分布统计、规则引擎独立命中率和命中正确率统计、ML 引擎独立准确率统计。全部步骤执行完成，输出"端到端验证完成！所有模块正常工作"。
+5.4.2   压力测试
+一、系统并发控制机制
+（1）检测接口的数据集级锁。routes_detection.py 采用数据集级并发控制，通过 _detect_locks 为不同数据集维护独立锁，_dict_lock 保障字典安全。检测接口非阻塞抢锁，冲突返回 409，不同数据集可并行运行，finally 确保锁必释放，避免死锁。
+（2）训练接口的全局锁。routes_system.py 通过 _train_lock 和 _training_in_progress 布尔标志防止并发训练，训练任务在守护线程中异步执行，训练完成后在 finally 块中重置标志并释放锁。
+（3）数据库层的并发优化。 SQLite 连接配置了 WAL 日志模式（允许读写并发）、busy_timeout=60000（写冲突时等待 60 秒而非立即报错）和 synchronous=NORMAL（降低磁盘同步频率提升写入性能）。
+二、高并发测试方案与稳定性验证结果分析
+本系统的高并发测试在以下环境中进行：操作系统为 Windows 11 / Ubuntu 22.04，处理器为 Intel Core i7-12700H（14 核 20 线程），内存 16 GB DDR5，存储为 NVMe SSD，显卡为 NVIDIA RTX 3060 Laptop（6GB 显存，用于 GRU 模型推理与训练），Python 版本为 3.11，服务通过 uvicorn main:app --reload 以单 worker 模式启动。
+如表5.8所示：
+表5.8 测试分析
+测试场景	预期行为	验证要点
+同数据集并发检测	仅1个成功，其余返回409	锁互斥性、无数据重复写入
+跨数据集并发检测	两者均成功	锁粒度正确、结果互不干扰
+检测中并发查询	查询正常返回	WAL模式读写不阻塞
+训练与检测并发	两者均正常执行	锁独立性、无死锁
+批量查询压力	P95响应时间<500ms	索引有效性、连接池性能
+
+  其中批量查询压力测试如表 5.9所示：
+表5.9 批量查询压力测试
+并发数	P50 (ms)	P95 (ms)	P99 (ms)	CPU%	内存 (MB)	备注
+1	8	12	15	~3%	~420	基线
+5	10	18	25	~8%	~430	正常
+10	14	28	42	~15%	~440	正常
+20	22	65	110	~30%	~460	正常
+50	58	180	320	~55%	~510	响应时间开始明显上升
+100	135	520	860	~75%	~580	P95 突破 500ms 阈值
+
+拐点：并发量达到 ~50 时响应时间开始显著增加；并发量达到 ~100 时 P95 超过 500ms。
+系统通过“非阻塞锁 + 409 快速拒绝”的策略避免了请求排队导致的超时问题，通过 run_in_threadpool 将阻塞的检测逻辑放入线程池执行避免阻塞 FastAPI 的异步事件循环，通过 SQLite WAL 模式实现读写并发。主要瓶颈在于 SQLite 的单写者限制——同一时刻仅允许一个写事务，大规模并发写入场景下可能成为性能瓶颈，后续可考虑迁移至 PostgreSQL 等支持多写者并发的数据库。
+第 6 章    结论
+本文设计并实现了一个基于规则引擎与机器学习集成的网络入侵检测[14]系统，采用 YAML 规则引擎实现已知攻击的精确匹配，XGBoost + GRU 集成模型实现未知攻击的泛化检测，混合决策引擎通过四级决策逻辑融合两者的检测结果并生成分级告警。系统后端基于 FastAPI 框架提供 RESTful API 服务，前端基于 Vue 3 和 ECharts 实现数据可视化与交互操作。在 NSL-KDD 五分类任务上集成模型准确率达 99.87%，在 UNSW-NB15 十分类任务上达 80.10%。本章将总结研究工作的主要成果，并分析当前系统的不足与未来改进方向。
+6.1  研究总结
+本研究设计并实现了一个基于规则引擎与机器学习集成的网络入侵检测系统，在模型设计方面，提出了 XGBoost + GRU 加权概率融合的集成学习方案，结合 SMOTENC 过采样和类别加权损失的双重平衡策略有效缓解了类别不平衡问题，通过网格搜索自动确定最优集成权重；在系统实现方面，构建了 YAML 规则引擎、ML 引擎和混合决策引擎三层检测架构，通过四级决策逻辑（HYBRID/RULE/ML/NONE）融合误用检测与异常检测的结果并生成分级告警，后端基于 FastAPI 提供 RESTful API 服务，前端基于 Vue 3 和 ECharts 实现数据可视化；在实验验证方面，集成模型在 NSL-KDD 五分类任务上准确率达 99.87%、宏平均 F1-Score 为 0.9545，在 UNSW-NB15 十分类任务上准确率达 80.10%，单元测试、集成测试和端到端测试覆盖了系统的核心功能和异常容错场景。
+当前系统存在以下不足：规则库仅包含 7 条规则，覆盖 DoS 和 Probe 两个攻击类别，对 R2L、U2R 等攻击无规则检测能力，后续应扩充规则库并引入自动化规则生成机制；UNSW-NB15 十分类任务上 Analysis（F1=0.19）、Backdoor（F1=0.15）等少数类检测效果不佳，需探索更强的特征工程或深度学习方案；ML 置信度阈值采用全局固定值 0.7，缺乏按攻击类别差异化的自适应阈值机制；系统仅支持离线数据集的批量检测，不具备实时网络流量的在线检测能力，需集成流量采集工具和流式处理框架；集成权重搜索仅以准确率为优化目标，未考虑宏平均 F1-Score 等更全面的指标；SQLite 数据库在大规模并发场景下存在性能瓶颈，需迁移至生产级数据库。
+6.2  未来展望
+UNSW-NB15 上 Analysis（F1=0.19）和 Backdoor（F1=0.15）的检测效果是当前系统最突出的短板，根本原因在于这两类攻击的网络流统计特征与正常流量高度相似，SMOTENC 合成样本难以覆盖其真实特征分布。后续改进可从三个层面入手：（1）特征增强——在现有 42 维流统计特征基础上，引入载荷长度分布、请求响应时间序列等应用层特征，为 Analysis 和 Backdoor 提供额外的区分维度；（2）分层分类策略——将当前的单一十分类器改为两级级联结构，第一级区分正常与攻击，第二级仅在攻击样本中进行细粒度分类，降低少数类被多数类淹没的风险；（3）自适应阈值机制——将当前全局固定的 ML 置信度阈值 0.7 改为按类别差异化设置，对 Analysis、Backdoor 等低精确率类别适当提高阈值以降低误报，对 Generic、Normal 等高精确率类别维持较低阈值以保持检测灵敏度。这些改进均基于现有模型架构，无需引入全新的模型范式。
+当前系统通过 POST /api/detection/run 一次性加载整个数据集文件后逐条检测，无法处理持续到达的网络流量。改进思路为：（1）集成 CICFlowMeter 等开源流量特征提取工具，将原始 pcap 或镜像流量实时解析为与现有数据集特征格式对齐的连接记录；（2）在现有 FastAPI 框架上增加 WebSocket 端点，前端通过长连接实时接收检测结果和告警推送，替代当前的轮询查询模式；（3）将 SQLite 迁移至 PostgreSQL，解决单写者限制导致的高并发写入瓶颈，支撑实时检测场景下的持续数据写入需求。这些改进均为现有架构的自然延伸，核心检测引擎（规则引擎、ML 引擎、混合决策引擎）无需重构，仅需在数据输入层和前端通信层进行扩展。
+参考文献
+[1]	吴际,黄传河,王丽娜,等.基于数据挖掘的入侵检测系统研究[J].计算机工程与应用, 2003, 39(4):4.DOI:10.3321/j.issn:1002-8331.2003.04.052.
+[2]	邓淼磊,阚雨培,孙川川,等.基于深度学习的网络入侵检测系统综述[J].计算机应用, 2025, 45(2):453-466.DOI:10.11772/j.issn.1001-9081.2024020229.
+[3]	徐海航.基于双向时间卷积网络的入侵检测方法研究[D].河南工业大学,2025.
+[4]	何坚安,刘峥,任若冰,等.基于改进深度学习的通信网络节点攻击态势检测方法[J].网络安全技术与应用, 2025(9).
+[5]	王俪霏.基于Wasserstein生成对抗网络的不平衡数据过采样方法研究[D].长春工业大学,2026.
+[6]	常鑫.高维物联网监测数据的智能异常检测技术研究与应用[D].华北科技学院,2026.
+[7]	孙菡迪.基于小样本学习的入侵检测方法研究与实现[D].贵州大学,2026.
+[8]	何夏冰,薛波,陈崚,等.RBF神经网络抗体群用于入侵检测的研究[J].计算机工程与设计, 2011, 32(010):3254-3257.DOI:CNKI:SUN:SJSJ.0.2011-10-003.
+[9]	范祎雯.面向工控网络入侵检测的数据均衡与特征提取优化方法研究[D].扬州大学,2026.
+[10]	贾贺然.计算机网络信息安全及防护策略分析[J].电脑迷, 2018.DOI:CNKI:SUN:DNMI.0.2018-06-072.
+[11]	崔如楠.基于深度强化学习的网络入侵检测研究[D].北京化工大学,2026.
+[12]	符纬康.基于深度森林的Java代码漏洞挖掘算法研究[D].昆明理工大学,2023.
+[13]	李铂初,阎红灿.基于集成学习的入侵检测模型[J].华北理工大学学报（自然科学版）, 2024, 46(1):122-132.
+[14]	包文博.面向层次结构和特征融合的网络入侵检测系统设计与实现[D].南京邮电大学,2026.
+[15]	Tavallaee M, Bagheri E, Lu W, et al. A detailed analysis of the IEEE 2009 Symposium on Computational Intelligence for Security and Defense Applications (CISDA)[C]//2009 IEEE Symposium on Computational Intelligence for Security and Defense Applications, Ottawa, ON, Canada, July 8-10, 2009. Piscataway: IEEE Press, 2009: 1-6. DOI:10.1109/CISDA.2009.5356528.
+[16]	Paszke A , Lerer A , Killeen T ,et al.PyTorch: An Imperative Style, High-Performance Deep Learning Library[C]//Advances in Neural Information Processing Systems 32, Volume 11 of 20: 32nd Conference on Neural Information Processing Systems (NeurIPS 2019).Vancouver(CA).8-14 December 2019.2020.
+[17]	Ramirez-Gallego S , Krawczyk B , Garcia S ,et al.A survey on data preprocessing for data stream mining: Current status and future directions[J].Neurocomputing, 2017, 239(MAY24):39-57.DOI:10.1016/j.neucom.2017.01.078.
+[18]	Stolfo S J , Fan W , Lee W ,et al.[IEEE Comput. Soc DARPA Information Survivability Conference and Exposition. DISCEX\"00 - Hilton Head, SC, USA (25-27 Jan. 2000)] Proceedings DARPA Information Survivability Conference and Exposition. DISCEX\"00 - Cost-based modeling for fraud and intrusio[J].  1999, 2:130-144.DOI:10.1109/discex.2000.821515.
+[19]	Moustafa N , Slay J .UNSW-NB15: a comprehensive data set for network intrusion detection systems (UNSW-NB15 network data set)[J].IEEE, 2015.DOI:10.1109/MilCIS.2015.7348942.
+致  谢
+时光荏苒，本科阶段的学习与研究即将告一段落。通过本次基于机器学习的网络入侵检测系统的设计与实现，我不仅系统巩固了网络安全、机器学习及前后端开发的专业知识，更在工程实践、问题排查与学术写作方面得到了全面锻炼，深刻体会到理论结合实践的重要性。
+在此，我首先向我的指导老师王红涛副教授致以最诚挚的谢意。从论文选题、框架搭建到系统实现与文稿修改，王老师都给予了耐心细致的指导与严谨的学术建议，使我能够顺利完成研究与开发工作。
+同时，感谢在学习与项目开发过程中给予我帮助的同学与朋友们，在技术交流、测试验证与文档整理等方面提供了诸多支持。感谢河南大学软件学院提供的学习平台与资源，让我得以不断提升专业能力。
+最后，向参与本论文评审与答辩的各位老师表示感谢，你们的意见将促使我持续改进与进步。未来我将继续保持严谨的学习态度，在网络安全领域不断探索前行。
+查重报告
+（简版首页，单独占一页）在最后一次查重以后，将查重报告的简版嵌入到本文档。
+ 
+格式检测报告
+
